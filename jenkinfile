@@ -1,0 +1,77 @@
+install plugin, git,docker pipeline, ssh agent, pipeline
+configure credential, manage credetial, add for git repo if private, dockerhub, ssh
+  
+
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_REGISTRY = "your-dockerhub-username"
+        DOCKER_IMAGE = "my-python-app"
+    }
+
+    stages {
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: 'https://github.com/your-repo.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'python3 -m venv venv'
+                sh './venv/bin/pip install -r requirements.txt'
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh './venv/bin/pytest'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                docker build -t $DOCKER_REGISTRY/$DOCKER_IMAGE:latest .
+                """
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-hub-credentials', 
+                              usernameVariable: 'DOCKER_USER', 
+                              passwordVariable: 'DOCKER_PASS')]) {
+                    sh """
+                    echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                    docker push $DOCKER_REGISTRY/$DOCKER_IMAGE:latest
+                    """
+                }
+            }
+        }
+
+        stage('Deploy to Server') {
+            steps {
+                sshagent(['ssh-server-credentials']) {
+                    sh """
+                    ssh user@your-server-ip 'docker pull $DOCKER_REGISTRY/$DOCKER_IMAGE:latest && \
+                                             docker stop python-app || true && \
+                                             docker rm python-app || true && \
+                                             docker run -d --name python-app -p 5000:5000 $DOCKER_REGISTRY/$DOCKER_IMAGE:latest'
+                    """
+                }
+            }
+        }
+    }
+
+   post {
+    success {
+        echo 'Build succeeded!'
+    }
+    failure {
+        echo 'Build failed!'
+    }
+}
+
+}
