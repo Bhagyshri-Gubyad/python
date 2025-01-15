@@ -1,0 +1,48 @@
+todo=[]
+def add(task):
+    todo.append(task)
+    print("added ")
+def show():
+    if todo: 
+        for index, val in enumerate(todo):
+            print(f'{index+1}:{val}')
+           
+    else:
+        print('no task added, its empty')
+        
+def delete(taskno):
+    if 0 < taskno <= len(todo):
+        removed_task= todo.pop(taskno -1)
+        print('task removed')
+    
+while True:
+    print("\n ****** todo list menu *****")
+    print('1: add task')
+    print('2: view taks')
+    print('3: delete task')
+    print('4: quit')
+    
+    choice=int(input('enter number between 1 to 4'))
+    if choice == 1:
+        task=input('enter task:')
+        add(task)
+    elif choice == 2:
+        show()
+    elif choice == 3:
+        show()
+        try:
+            task=int(input('enter task number to delete'))
+            delete(task)
+        except valueError:
+            print("enter valid number")
+    elif choice == 4:
+        print("exiting .. goodbye.. have a nice day..")
+        break
+    else:
+        print("enter valid number between 1 to 4")
+        
+    next=input("Do you want to continue? enter yes/no")
+    if next != 'yes':
+        print('enjoy other things')
+        break
+        
